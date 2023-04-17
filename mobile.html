@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>贪吃蛇游戏</title>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      font-family: Arial, sans-serif;
+    }
+    canvas {
+      background-color: #f0f0f0;
+      border: 1px solid #ccc;
+    }
+    .container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+
+  p {
+    margin-bottom: 10px;
+  }
+  </style>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const canvas = document.getElementById("game");
+      const ctx = canvas.getContext("2d");
+
+      const gridSize = 15;
+      const snakeSpeed = 100;
+
+      canvas.width = window.innerWidth - 20;
+      canvas.height = window.innerWidth - 20;
+
+      let lastTouchTime = 0;
+
+      function handleDoubleClick() {
+        const currentTime = new Date().getTime();
+        const tapLength = currentTime - lastTouchTime;
+        lastTouchTime = currentTime;
+
+        if (tapLength < 500) {
+          isPaused = !isPaused;
+        }
+      }
+
+      let snake = [
+        { x: gridSize * 5, y: gridSize * 5 },
+        { x: gridSize * 4, y: gridSize * 5 },
+        { x: gridSize * 3, y: gridSize * 5 },
+      ];
+
+      let dx = gridSize;
+      let dy = 0;
+
+      let food = {
+        x: gridSize * 10,
+        y: gridSize * 10,
+      };
+
+      let isPaused = false;
+      let speedFactor = 1;
+
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Draw snake
+        ctx.fillStyle = "green";
+        snake.forEach((segment) => {
+          ctx.fillRect(segment.x, segment.y, gridSize, gridSize);
+          ctx.strokeRect(segment.x, segment.y, gridSize, gridSize);
+        });
+
+        // Draw food
+        ctx.fillStyle = "red";
+        ctx.fillRect(food.x, food.y, gridSize, gridSize);
+        ctx.strokeRect(food.x, food.y, gridSize, gridSize);
+      }
+
+      function update() {
+        const head = { x: snake[0].x + dx, y: snake[0].y + dy };
+
+        snake.unshift(head);
+        if (head.x === food.x && head.y === food.y) {
+          placeFood();
+          speedFactor = 1 + snake.length / 10;
+        } else {
+          snake.pop();
+        }
+
+        if (
+          head.x < 0 ||
+          head.y < 0 ||
+          head.x >= canvas.width ||
+          head.y >= canvas.height ||
+          snake.slice(1).some((segment) => segment.x === head.x && segment.y === head.y)
+        ) {
+          // Game over
+          snake = [
+            { x: gridSize * 5, y: gridSize * 5 },
+            { x: gridSize * 4, y: gridSize * 5 },
+            { x: gridSize * 3, y: gridSize * 5 },
+          ];
+          dx = gridSize;
+          dy = 0;
+          speedFactor = 1;
+        }
+      }
+
+      function placeFood() {
+        food = {
+          x: Math.floor(Math.random() * (canvas.width / gridSize)) * gridSize,
+          y: Math.floor(Math.random() * (canvas.height / gridSize)) * gridSize,
+        };
+      }
+  function handleKeyDown(e) {
+    if (e.key === " ") {
+      isPaused = !isPaused;
+    } else if (e.key === "ArrowUp" && dy === 0) {
+      dx = 0;
+      dy = -gridSize;
+    } else if (e.key === "ArrowDown" && dy === 0) {
+      dx = 0;
+      dy = gridSize;
+    } else if (e.key === "ArrowLeft" && dx === 0) {
+      dx = -gridSize;
+      dy = 0;
+    } else if (e.key === "ArrowRight" && dx === 0) {
+      dx = gridSize;
+      dy = 0;
+    }
+  }
+
+  function handleTouchStart(e) {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+  }
+
+  function handleTouchMove(e) {
+    if (!touchStartX || !touchStartY) {
+      return;
+    }
+
+    let xDiff = touchStartX - e.touches[0].clientX;
+    let yDiff = touchStartY - e.touches[0].clientY;
+
+    if (Math.abs(xDiff) > Math.abs(yDiff)) {
+      if (xDiff > 0 && dx === 0) {
+        dx = -gridSize;
+        dy = 0;
+      } else if (xDiff < 0 && dx === 0) {
+        dx = gridSize;
+        dy = 0;
+      }
+    } else {
+      if (yDiff > 0 && dy === 0) {
+        dx = 0;
+        dy = -gridSize;
+      } else if (yDiff < 0 && dy === 0) {
+        dx = 0;
+        dy = gridSize;
+      }
+    }
+
+    touchStartX = null;
+    touchStartY = null;
+  }
+
+  document.addEventListener("keydown", handleKeyDown);
+  document.addEventListener("touchstart", (e) => {
+  handleTouchStart(e);
+  handleDoubleClick();
+}, false);
+  document.addEventListener("touchmove", (e) => {
+  e.preventDefault();
+  handleTouchMove(e);
+}, { passive: false });
+
+  function gameLoop() {
+    draw();
+    if (!isPaused) {
+      update();
+    }
+    setTimeout(gameLoop, snakeSpeed / speedFactor);
+  }
+
+  gameLoop();
+});
+</script>
+</head>
+<body>
+  <div class="container">
+    <p>滑动屏幕移动蛇，双击屏幕暂停/恢复游戏。</p>
+    <canvas id="game"></canvas>
+  </div>
+</body>
+</html>
